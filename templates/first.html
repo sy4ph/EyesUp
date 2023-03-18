@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>EyesUp</title>
+</head>
+
+<body>
+    <h1>{% if not access_token %}
+        <a href="{{ auth_link }}">Log in with Bungie</a>
+        {% else %}
+        <a href="{{ prof_link }}">Profile</a>
+        {% endif %}
+    </h1>
+</body>
+
+</html>
