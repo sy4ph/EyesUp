@@ -9,10 +9,9 @@ import ssl
 
 app = flask.Flask(__name__)
 app.secret_key = os.urandom(24)
-
+token_got = False
 # Generate a self-signed SSL/TLS certificate and private key
-openssl_cmd = 'openssl req -x509 -newkey rsa:4096 -nodes -out cert.pem -keyout key.pem -days 365 -subj "/CN=localhost"'
-os.system(openssl_cmd)
+
 
 # Configure Flask to use SSL/TLS
 context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
@@ -48,14 +47,38 @@ async def callback():
         token = await rest.fetch_oauth2_tokens(code)
     flask.session["access_token"] = token.access_token
     flask.session["membership_id"] = token.membership_id
+    token_got = True
     return flask.redirect(flask.url_for("profile"))
 
 
 @app.route("/profile")
 async def profile():
+    if not (flask.session.get("access_token")):
+        print("redirected")
+        flask.redirect(flask.url_for("login"))
+
     async with rest_client.acquire() as rest:
-        user = await
-    return flask.render_template("profile.html", user=user)
+        user = await rest.fetch_current_user_memberships(flask.session["access_token"])
+    print(user)
+    print("name kinda is:", user.get("bungieNetUser").get("uniqueName"))
+    membership_id = user.get("destinyMemberships")[0].get("membershipId")
+    membership_type = user.get("destinyMemberships")[0].get("membershipType")
+    print(membership_type)
+    print(membership_id)
+    token = flask.session.get("access_token")
+    headers = {
+        "X-API-Key": "457a0f8c468a45b3926d70b4b14f601c",
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+    }
+    params = {"components": "Characters"}
+    request_url = f"https://www.bungie.net/Platform/Destiny2/{membership_type}/Profile/{membership_id}/?components=Characters"
+    response = requests.get(request_url, headers=headers)
+
+    print(response.text)
+    return flask.render_template(
+        "profile.html", username=user.get("bungieNetUser").get("uniqueName")
+    )
 
 
 if __name__ == ("__main__"):
