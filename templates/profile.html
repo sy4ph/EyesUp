@@ -1,9 +1,29 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>EyesUp</title>
-  </head>
-  <body>
-    <h1>Welcome, {{ username }}!</h1>
-  </body>
+
+<head>
+  <title>EyesUp</title>
+</head>
+
+<body>
+  <h1>Welcome, {{ username }}!</h1>
+  <h2>Membership ID: {{ membership_id }}</h2>
+  <h2>Your loadout:
+    <ul>
+      <li>Primary: {{ equipped_items[0] }} <img src="{{equipped_item_images[0]}}" , alt=" {{equipped_items[0]}}">
+      </li>
+      <li>Special: {{ equipped_items[1] }} <img src="{{equipped_item_images[1]}}" , alt=" {{equipped_items[1]}}">
+      </li>
+      <li>Heavy: {{ equipped_items[2] }} <img src="{{equipped_item_images[2]}}" , alt=" {{equipped_items[2]}}"> </li>
+    </ul>
+    Armor:
+    <ul>
+      <li>Helm: {{ equipped_items[3] }} <img src="{{equipped_item_images[3]}}" , alt=" {{equipped_items[3]}}"> </li>
+      <li>Arms: {{ equipped_items[4] }} <img src="{{equipped_item_images[4]}}" , alt=" {{equipped_items[4]}}"> </li>
+      <li>Chest: {{ equipped_items[5] }} <img src="{{equipped_item_images[5]}}" , alt=" {{equipped_items[5]}}"> </li>
+      <li>Legs: {{ equipped_items[6] }} <img src="{{equipped_item_images[6]}}" , alt=" {{equipped_items[6]}}"> </li>
+      <li>Class: {{ equipped_items[7] }} <img src="{{equipped_item_images[7]}}" , alt=" {{equipped_items[6]}}"></li>
+
+</body>
+
 </html>
