@@ -8,6 +8,7 @@ import json
 import ssl
 import asyncio
 
+
 app = flask.Flask(__name__)
 app.secret_key = os.urandom(24)
 token_got = False
@@ -29,7 +30,7 @@ async def manifest_check():
                     print("you not fine")
                     download_status = "We are downloading shit! Wait a minute."
                     await rest.download_json_manifest(
-                        "manifest", "C:\\Users\\timk2\\EyesUp"
+                        "manifest", "C:\\Users\\timk2\\EyesUp-1"
                     )
                     # write the manifest version to the file
                     file.write(str(await rest.fetch_manifest_version()))
@@ -63,6 +64,79 @@ def index():
     )
 
 
+@app.route("/weapons")
+async def weapons():
+    if not (flask.session.get("access_token")):
+        return flask.redirect("/")
+    components = [
+        aiobungie.ComponentType.ITEM_PERKS,
+        aiobungie.ComponentType.ITEM_INSTANCES,
+    ]
+    async with rest_client.acquire() as rest:
+        primary_ch_1 = await rest.fetch_item(
+            membership_id,
+            character1["equipment"]["data"]["items"][0]["itemInstanceId"],
+            membership_type,
+            components=components,
+        )
+        secondary_ch_1 = await rest.fetch_item(
+            membership_id,
+            character1["equipment"]["data"]["items"][1]["itemInstanceId"],
+            membership_type,
+            components=components,
+        )
+        heavy_ch_1 = await rest.fetch_item(
+            membership_id,
+            character1["equipment"]["data"]["items"][2]["itemInstanceId"],
+            membership_type,
+            components=components,
+        )
+        weapon1_perk_names = []
+        weapon1_perk_images = []
+        for perk in primary_ch_1["perks"]["data"]["perks"]:
+            try:
+                weapon1_perk_names.append(
+                    manifest["DestinySandboxPerkDefinition"][str(perk["perkHash"])][
+                        "displayProperties"
+                    ]["name"]
+                )
+                weapon1_perk_images.append("https://www.bungie.net" + perk["iconPath"])
+            except KeyError:
+                pass
+        weapon2_perk_names = []
+        weapon2_perk_images = []
+        for perk in secondary_ch_1["perks"]["data"]["perks"]:
+            try:
+                weapon2_perk_names.append(
+                    manifest["DestinySandboxPerkDefinition"][str(perk["perkHash"])][
+                        "displayProperties"
+                    ]["name"]
+                )
+                weapon2_perk_images.append("https://www.bungie.net" + perk["iconPath"])
+            except KeyError:
+                pass
+        weapon3_perk_names = []
+        weapon3_perk_images = []
+        for perk in heavy_ch_1["perks"]["data"]["perks"]:
+            try:
+                weapon3_perk_names.append(
+                    manifest["DestinySandboxPerkDefinition"][str(perk["perkHash"])][
+                        "displayProperties"
+                    ]["name"]
+                )
+                weapon3_perk_images.append("https://www.bungie.net" + perk["iconPath"])
+            except KeyError:
+                pass
+    print(primary_ch_1)
+    data = {
+        "primary_perk_names": weapon1_perk_names,
+        "primary_perk_images": weapon1_perk_images,
+        "pr_nm_len": len(weapon1_perk_names),
+        "pr_im_len": len(weapon1_perk_images),
+    }
+    return flask.render_template("weapons.html", **data)
+
+
 @app.route("/login")
 async def login():
     async with rest_client.acquire() as rest:
@@ -84,12 +158,19 @@ async def callback():
 
 @app.route("/profile")
 async def profile():
+    global user
+    global membership_id
+    global membership_type
+    global token
+    global character_ids
+    global character1
+    global character2
+    global character3
     if not (flask.session.get("access_token")):
         print("redirected")
         return flask.redirect("/")
     else:
         async with rest_client.acquire() as rest:
-
             user = await rest.fetch_current_user_memberships(
                 flask.session["access_token"]
             )
@@ -123,41 +204,62 @@ async def profile():
                 components,
                 flask.session.get("access_token"),
             )
-            items = character1["inventory"]["data"]["items"]
-            item_hashes = [item["itemHash"] for item in items]
+            if len(character_ids) > 1:
+                character2 = await rest.fetch_character(
+                    membership_id,
+                    membership_type,
+                    character_ids[1],
+                    components,
+                    flask.session.get("access_token"),
+                )
+            if len(character_ids) > 2:
+                character3 = await rest.fetch_character(
+                    membership_id,
+                    membership_type,
+                    character_ids[2],
+                    components,
+                    flask.session.get("access_token"),
+                )
+            items_1 = character1["inventory"]["data"]["items"]
+            item_hashes_1 = [item["itemHash"] for item in items_1]
+            items_2 = character2["inventory"]["data"]["items"]
+            item_hashes_2 = [item["itemHash"] for item in items_2]
+            items_3 = character3["inventory"]["data"]["items"]
+            item_hashes_3 = [item["itemHash"] for item in items_3]
 
-            for item in item_hashes:
-                print(
-                    manifest["DestinyInventoryItemDefinition"][str(item)][
-                        "displayProperties"
-                    ]["name"]
-                )
             # Get a list of equipped items
-            equipped_items = []
+            equipped_items_ch1 = []
+            equipped_items_ch2 = []
+            equipped_items_ch3 = []
+            for item in character2["equipment"]["data"]["items"]:
+                equipped_items_ch2.append(item["itemHash"])
             for item in character1["equipment"]["data"]["items"]:
-                equipped_items.append(item["itemHash"])
+                equipped_items_ch1.append(item["itemHash"])
             # Convert eqipped item hashes to item names
-            equipped_item_names = []
-            equipped_item_images = []
-            for item in equipped_items:
-                equipped_item_names.append(
+            equipped_item_names_ch1 = []
+            equipped_item_images_ch1 = []
+            equipped_item_names_ch2 = []
+            equipped_item_images_ch2 = []
+            for item in equipped_items_ch1:
+                equipped_item_names_ch1.append(
                     manifest["DestinyInventoryItemDefinition"][str(item)][
                         "displayProperties"
                     ]["name"]
                 )
-                equipped_item_images.append(
+                equipped_item_images_ch1.append(
                     "https://www.bungie.net"
                     + manifest["DestinyInventoryItemDefinition"][str(item)][
                         "displayProperties"
                     ]["icon"]
                 )
-            print(equipped_item_images)
-            print(equipped_item_names)
+            print(equipped_item_images_ch1)
+            print(equipped_item_names_ch1)
             data = {
+                "weapons_link": flask.url_for("weapons"),
                 "username": user.get("bungieNetUser").get("uniqueName"),
                 "membership_id": membership_id,
-                "equipped_items": equipped_item_names,
-                "equipped_item_images": equipped_item_images,
+                "equipped_items_1": equipped_item_names_ch1,
+                "equipped_item_images_1": equipped_item_images_ch1,
             }
             return flask.render_template("profile.html", **data)
 
